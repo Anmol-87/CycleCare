@@ -1,6 +1,7 @@
 package com.anmol.cyclecare.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,97 +34,165 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private val PeriodPink = Color(0xFFFF6B9A)
-private val LightPink = Color(0xFFFFE1EB)
-private val DarkText = Color(0xFF49333D)
+private val PeriodPink = Color(0xFFB83D68)
+private val LightPeriodPink = Color(0xFFFCE8EF)
+private val EndDatePurple = Color(0xFF8660B5)
+private val DarkText = Color(0xFF30252B)
 private val MutedText = Color(0xFF9A8490)
 
 @Composable
 fun PeriodCalendar(
     periodDates: Set<LocalDate>,
+    startDates: Set<LocalDate>,
+    endDates: Set<LocalDate>,
     modifier: Modifier = Modifier,
     onDateSelected: (LocalDate) -> Unit = {}
 ) {
-    var displayedMonth by remember { mutableStateOf(YearMonth.now()) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var displayedMonth by remember {
+        mutableStateOf(YearMonth.now())
+    }
+
+    var selectedDate by remember {
+        mutableStateOf<LocalDate?>(null)
+    }
 
     val today = LocalDate.now()
 
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        )
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
 
+            // Month navigation
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                IconButton(onClick = {
-                    displayedMonth = displayedMonth.minusMonths(1)
-                    selectedDate = null
-                }) {
-                    Text("‹", fontSize = 30.sp, color = PeriodPink)
+                IconButton(
+                    onClick = {
+                        displayedMonth = displayedMonth.minusMonths(1)
+                        selectedDate = null
+                    }
+                ) {
+                    Text(
+                        text = "‹",
+                        fontSize = 30.sp,
+                        color = PeriodPink
+                    )
                 }
 
                 Text(
                     text = displayedMonth.format(
-                        DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())
+                        DateTimeFormatter.ofPattern(
+                            "MMMM yyyy",
+                            Locale.getDefault()
+                        )
                     ),
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkText
                 )
 
-                IconButton(onClick = {
-                    displayedMonth = displayedMonth.plusMonths(1)
-                    selectedDate = null
-                }) {
-                    Text("›", fontSize = 30.sp, color = PeriodPink)
+                IconButton(
+                    onClick = {
+                        displayedMonth = displayedMonth.plusMonths(1)
+                        selectedDate = null
+                    }
+                ) {
+                    Text(
+                        text = "›",
+                        fontSize = 30.sp,
+                        color = PeriodPink
+                    )
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth()) {
-                listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-                    .forEach { day ->
-                        Text(
-                            text = day,
-                            modifier = Modifier.weight(1f),
-                            color = MutedText,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+            // Weekday headings
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                listOf(
+                    "Mon", "Tue", "Wed", "Thu",
+                    "Fri", "Sat", "Sun"
+                ).forEach { day ->
+                    Text(
+                        text = day,
+                        modifier = Modifier.weight(1f),
+                        color = MutedText,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
+
+            Spacer(modifier = Modifier.padding(top = 4.dp))
 
             val firstDay = displayedMonth.atDay(1)
             val daysInMonth = displayedMonth.lengthOfMonth()
-            val startingOffset = firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value
-            val totalCells = ((startingOffset + daysInMonth + 6) / 7) * 7
 
+            val startingOffset =
+                firstDay.dayOfWeek.value - DayOfWeek.MONDAY.value
+
+            val totalCells =
+                ((startingOffset + daysInMonth + 6) / 7) * 7
+
+            // Calendar dates
             for (weekStart in 0 until totalCells step 7) {
-                Row(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     for (column in 0 until 7) {
-                        val dayNumber = weekStart + column - startingOffset + 1
+                        val dayNumber =
+                            weekStart + column - startingOffset + 1
 
                         if (dayNumber in 1..daysInMonth) {
                             val date = displayedMonth.atDay(dayNumber)
+
                             val isPeriodDay = date in periodDates
+                            val isStartDate = date in startDates
+                            val isEndDate = date in endDates
                             val isToday = date == today
                             val isSelected = date == selectedDate
 
+                            // Start dates are dark pink.
+                            // End dates are purple.
+                            // Intermediate period days are light pink.
                             val backgroundColor = when {
-                                isSelected -> DarkText
-                                isPeriodDay -> PeriodPink
-                                else -> Color.Transparent
+                                isStartDate && isEndDate ->
+                                    PeriodPink
+
+                                isStartDate ->
+                                    PeriodPink
+
+                                isEndDate ->
+                                    EndDatePurple
+
+                                isPeriodDay ->
+                                    LightPeriodPink
+
+                                else ->
+                                    Color.Transparent
                             }
 
                             val textColor = when {
-                                isSelected || isPeriodDay -> Color.White
-                                isToday -> PeriodPink
-                                else -> DarkText
+                                isStartDate || isEndDate ->
+                                    Color.White
+
+                                isPeriodDay ->
+                                    DarkText
+
+                                isToday ->
+                                    PeriodPink
+
+                                else ->
+                                    DarkText
                             }
 
                             Column(
@@ -131,28 +200,63 @@ fun PeriodCalendar(
                                     .weight(1f)
                                     .padding(vertical = 3.dp)
                                     .aspectRatio(0.82f)
-                                    .background(backgroundColor, CircleShape)
+                                    .background(
+                                        color = backgroundColor,
+                                        shape = CircleShape
+                                    )
+                                    .then(
+                                        if (isToday || isSelected) {
+                                            Modifier.border(
+                                                width = if (isSelected) {
+                                                    2.dp
+                                                } else {
+                                                    1.dp
+                                                },
+                                                color = if (isSelected) {
+                                                    DarkText
+                                                } else {
+                                                    PeriodPink
+                                                },
+                                                shape = CircleShape
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
                                     .clickable {
                                         selectedDate = date
                                         onDateSelected(date)
                                     },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
+                                horizontalAlignment =
+                                    Alignment.CenterHorizontally,
+                                verticalArrangement =
+                                    Arrangement.Center
                             ) {
                                 Text(
                                     text = dayNumber.toString(),
                                     color = textColor,
                                     fontSize = 14.sp,
                                     fontWeight = if (
-                                        isToday || isPeriodDay || isSelected
-                                    ) FontWeight.Bold else FontWeight.Normal
+                                        isToday ||
+                                        isPeriodDay ||
+                                        isSelected
+                                    ) {
+                                        FontWeight.Bold
+                                    } else {
+                                        FontWeight.Normal
+                                    }
                                 )
 
                                 if (isPeriodDay) {
                                     Text(
-                                        text = "•",
-                                        color = Color.White,
-                                        fontSize = 9.sp,
+                                        text = when {
+                                            isStartDate && isEndDate -> "●"
+                                            isStartDate -> "S"
+                                            isEndDate -> "E"
+                                            else -> "•"
+                                        },
+                                        color = textColor,
+                                        fontSize = 8.sp,
                                         lineHeight = 9.sp
                                     )
                                 }
@@ -168,39 +272,81 @@ fun PeriodCalendar(
                 }
             }
 
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Spacer(
-                    modifier = Modifier
-                        .background(PeriodPink, CircleShape)
-                        .padding(5.dp)
-                )
+            Spacer(modifier = Modifier.padding(top = 8.dp))
 
-                Text(
-                    text = "  Logged period date",
-                    color = MutedText,
-                    fontSize = 12.sp
-                )
-            }
+            // Legend
+            CalendarLegend(
+                color = PeriodPink,
+                label = "Start date"
+            )
 
+            CalendarLegend(
+                color = LightPeriodPink,
+                label = "Period days"
+            )
+
+            CalendarLegend(
+                color = EndDatePurple,
+                label = "End date"
+            )
+
+            Spacer(modifier = Modifier.padding(top = 4.dp))
+
+            // Selected date information
             selectedDate?.let { date ->
+                val message = when {
+                    date in startDates && date in endDates ->
+                        "Period started and ended on this date"
+
+                    date in startDates ->
+                        "Period start date"
+
+                    date in endDates ->
+                        "Period end date"
+
+                    date in periodDates ->
+                        "Period day"
+
+                    else ->
+                        "No period recorded on this date"
+                }
+
                 Text(
-                    text = if (date in periodDates) {
-                        "💗 Period recorded on ${
-                            date.format(DateTimeFormatter.ofPattern("d MMM yyyy"))
-                        }"
-                    } else {
-                        "Selected: ${
-                            date.format(DateTimeFormatter.ofPattern("d MMM yyyy"))
-                        }"
-                    },
-                    modifier = Modifier.padding(top = 10.dp),
+                    text = "$message • ${
+                        date.format(
+                            DateTimeFormatter.ofPattern("d MMM yyyy")
+                        )
+                    }",
+                    modifier = Modifier.padding(top = 12.dp),
                     color = DarkText,
-                    fontSize = 14.sp
+                    fontSize = 13.sp
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CalendarLegend(
+    color: Color,
+    label: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(
+            modifier = Modifier
+                .background(color, CircleShape)
+                .padding(6.dp)
+        )
+
+        Text(
+            text = "  $label",
+            color = MutedText,
+            fontSize = 12.sp
+        )
     }
 }

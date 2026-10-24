@@ -37,6 +37,8 @@ android {
 }
 
 dependencies {
+     implementation(platform("androidx.compose:compose-bom:2026.02.01"))
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
