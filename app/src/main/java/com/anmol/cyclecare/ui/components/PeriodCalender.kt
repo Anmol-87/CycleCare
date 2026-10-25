@@ -37,6 +37,7 @@ import java.util.Locale
 private val PeriodPink = Color(0xFFB83D68)
 private val LightPeriodPink = Color(0xFFFCE8EF)
 private val EndDatePurple = Color(0xFF8660B5)
+private val PredictedLavender = Color(0xFFE9E0FA)
 private val DarkText = Color(0xFF30252B)
 private val MutedText = Color(0xFF9A8490)
 
@@ -46,7 +47,8 @@ fun PeriodCalendar(
     startDates: Set<LocalDate>,
     endDates: Set<LocalDate>,
     modifier: Modifier = Modifier,
-    onDateSelected: (LocalDate) -> Unit = {}
+    onDateSelected: (LocalDate) -> Unit = {},
+    predictedDates: Set<LocalDate> = emptySet()
 ) {
     var displayedMonth by remember {
         mutableStateOf(YearMonth.now())
@@ -68,7 +70,6 @@ fun PeriodCalendar(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-
             // Month navigation
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -158,41 +159,26 @@ fun PeriodCalendar(
                             val isPeriodDay = date in periodDates
                             val isStartDate = date in startDates
                             val isEndDate = date in endDates
+                            val isPredictedDate =
+                                date in predictedDates && !isPeriodDay
                             val isToday = date == today
                             val isSelected = date == selectedDate
 
-                            // Start dates are dark pink.
-                            // End dates are purple.
-                            // Intermediate period days are light pink.
+                            // Recorded dates take priority over predictions.
                             val backgroundColor = when {
-                                isStartDate && isEndDate ->
-                                    PeriodPink
-
-                                isStartDate ->
-                                    PeriodPink
-
-                                isEndDate ->
-                                    EndDatePurple
-
-                                isPeriodDay ->
-                                    LightPeriodPink
-
-                                else ->
-                                    Color.Transparent
+                                isStartDate -> PeriodPink
+                                isEndDate -> EndDatePurple
+                                isPeriodDay -> LightPeriodPink
+                                isPredictedDate -> PredictedLavender
+                                else -> Color.Transparent
                             }
 
                             val textColor = when {
-                                isStartDate || isEndDate ->
-                                    Color.White
-
-                                isPeriodDay ->
-                                    DarkText
-
-                                isToday ->
-                                    PeriodPink
-
-                                else ->
-                                    DarkText
+                                isStartDate || isEndDate -> Color.White
+                                isPeriodDay -> DarkText
+                                isPredictedDate -> Color(0xFF68469A)
+                                isToday -> PeriodPink
+                                else -> DarkText
                             }
 
                             Column(
@@ -239,6 +225,7 @@ fun PeriodCalendar(
                                     fontWeight = if (
                                         isToday ||
                                         isPeriodDay ||
+                                        isPredictedDate ||
                                         isSelected
                                     ) {
                                         FontWeight.Bold
@@ -247,18 +234,29 @@ fun PeriodCalendar(
                                     }
                                 )
 
-                                if (isPeriodDay) {
-                                    Text(
-                                        text = when {
-                                            isStartDate && isEndDate -> "●"
-                                            isStartDate -> "S"
-                                            isEndDate -> "E"
-                                            else -> "•"
-                                        },
-                                        color = textColor,
-                                        fontSize = 8.sp,
-                                        lineHeight = 9.sp
-                                    )
+                                when {
+                                    isPeriodDay -> {
+                                        Text(
+                                            text = when {
+                                                isStartDate && isEndDate -> "●"
+                                                isStartDate -> "S"
+                                                isEndDate -> "E"
+                                                else -> "•"
+                                            },
+                                            color = textColor,
+                                            fontSize = 8.sp,
+                                            lineHeight = 9.sp
+                                        )
+                                    }
+
+                                    isPredictedDate -> {
+                                        Text(
+                                            text = "•",
+                                            color = Color(0xFF8660B5),
+                                            fontSize = 8.sp,
+                                            lineHeight = 9.sp
+                                        )
+                                    }
                                 }
                             }
                         } else {
@@ -274,20 +272,25 @@ fun PeriodCalendar(
 
             Spacer(modifier = Modifier.padding(top = 8.dp))
 
-            // Legend
+            // Calendar legend
             CalendarLegend(
                 color = PeriodPink,
-                label = "Start date"
+                label = "Period start"
             )
 
             CalendarLegend(
                 color = LightPeriodPink,
-                label = "Period days"
+                label = "Recorded period days"
             )
 
             CalendarLegend(
                 color = EndDatePurple,
-                label = "End date"
+                label = "Period end"
+            )
+
+            CalendarLegend(
+                color = PredictedLavender,
+                label = "Predicted period days"
             )
 
             Spacer(modifier = Modifier.padding(top = 4.dp))
@@ -299,13 +302,16 @@ fun PeriodCalendar(
                         "Period started and ended on this date"
 
                     date in startDates ->
-                        "Period start date"
+                        "Recorded period start date"
 
                     date in endDates ->
-                        "Period end date"
+                        "Recorded period end date"
 
                     date in periodDates ->
-                        "Period day"
+                        "Recorded period day"
+
+                    date in predictedDates ->
+                        "Predicted period day — this is only an estimate"
 
                     else ->
                         "No period recorded on this date"

@@ -23,6 +23,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -37,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.anmol.cyclecare.viewmodel.PeriodViewModel
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Locale
 
@@ -52,19 +55,28 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
     val periods by periodViewModel.periods.collectAsState()
+    val averageCycleLength by periodViewModel.averageCycleLength.collectAsState()
+    val selectedCycleLength by periodViewModel.selectedCycleLength.collectAsState()
+    val nextPredictedPeriodDate by periodViewModel.nextPredictedPeriodDate.collectAsState()
 
     val latestPeriod = periods.firstOrNull()
 
-    val formattedDate = latestPeriod?.startDate?.let { date ->
-        runCatching {
-            LocalDate.parse(date).format(
-                DateTimeFormatter.ofPattern(
-                    "dd MMM yyyy",
-                    Locale.getDefault()
-                )
-            )
-        }.getOrNull()
+    val latestStartDate = latestPeriod?.startDate?.let { date ->
+        runCatching { LocalDate.parse(date) }.getOrNull()
+    }
+
+    val formattedDate = latestStartDate?.format(
+        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
+    )
+
+    val formattedPrediction = nextPredictedPeriodDate?.format(
+        DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault())
+    )
+
+    val daysUntilNextPeriod = nextPredictedPeriodDate?.let {
+        ChronoUnit.DAYS.between(LocalDate.now(), it).toInt()
     }
 
     Column(
@@ -146,6 +158,87 @@ fun HomeScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        // Next period prediction card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = HomePink
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(22.dp)
+            ) {
+                Text(
+                    text = "YOUR NEXT PERIOD 🌷",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.3.sp,
+                    color = Color.White
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                if (formattedPrediction != null && daysUntilNextPeriod != null) {
+                    Text(
+                        text = formattedPrediction,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = when {
+                            daysUntilNextPeriod > 1 ->
+                                "About $daysUntilNextPeriod days to go 💗"
+
+                            daysUntilNextPeriod == 1 ->
+                                "Estimated to start tomorrow 💗"
+
+                            daysUntilNextPeriod == 0 ->
+                                "Your predicted start date is today 💗"
+
+                            else ->
+                                "The predicted date has passed. Log your next period to update your estimate."
+                        },
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp,
+                        color = Color.White
+                    )
+                } else {
+                    Text(
+                        text = "Your prediction starts here",
+                        fontSize = 23.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        text = "Record your last period's start date to see an estimated next date.",
+                        fontSize = 14.sp,
+                        lineHeight = 21.sp,
+                        color = Color.White
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "Predictions are estimates, not guarantees.",
+                    fontSize = 12.sp,
+                    color = Color.White
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
         // Cycle overview card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -197,11 +290,9 @@ fun HomeScreen(
 
                 Text(
                     text = if (latestPeriod == null) {
-                        "Log the first day of your last period to begin " +
-                                "building your personal history."
+                        "Log the first day of your last period to begin building your personal history."
                     } else {
-                        "Your recorded period is saved on this device. " +
-                                "You can review your dates in the Calendar tab."
+                        "Your recorded period is saved on this device. You can review your dates in the Calendar tab."
                     },
                     fontSize = 14.sp,
                     lineHeight = 21.sp,
@@ -230,6 +321,119 @@ fun HomeScreen(
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Cycle length settings
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
+            )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Cycle length settings ⚙️",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HomeDarkText
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "Choose your usual cycle length. Your prediction updates automatically.",
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp,
+                    color = HomeSecondaryText
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Selected length",
+                        fontSize = 14.sp,
+                        color = HomeSecondaryText
+                    )
+
+                    Text(
+                        text = "$selectedCycleLength days",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HomePink
+                    )
+                }
+
+                Slider(
+                    value = selectedCycleLength.toFloat(),
+                    onValueChange = { value ->
+                        periodViewModel.setCycleLength(value.toInt())
+                    },
+                    valueRange = 15f..60f,
+                    steps = 44
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("15 days", fontSize = 12.sp, color = HomeSecondaryText)
+                    Text("60 days", fontSize = 12.sp, color = HomeSecondaryText)
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                Text(
+                    text = "Automatic average",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = HomeDarkText
+                )
+
+                Spacer(Modifier.height(6.dp))
+
+                Text(
+                    text = when {
+                        averageCycleLength == null ->
+                            "Record at least two period start dates to calculate your average."
+
+                        else ->
+                            "Your recorded cycles average $averageCycleLength days."
+                    },
+                    fontSize = 14.sp,
+                    lineHeight = 21.sp,
+                    color = HomeSecondaryText
+                )
+
+                if (averageCycleLength != null) {
+                    Spacer(Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            periodViewModel.setCycleLength(averageCycleLength!!)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = HomeLightPink,
+                            contentColor = HomePink
+                        )
+                    ) {
+                        Text("Use my calculated average")
+                    }
                 }
             }
         }
