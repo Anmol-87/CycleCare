@@ -51,7 +51,28 @@
             </intent-filter>
 
         </receiver>
+        <!-- Handles Yes/No responses to Anmol Feature reminders -->
+        <receiver
+            android:name=".notifications.CareReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <!-- Displays scheduled Anmol Feature reminders -->
+        <receiver
+            android:name=".notifications.CareScheduledReminderReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <!-- Restores Anmol Feature reminders after restart -->
+        <receiver
+            android:name=".notifications.CareReminderBootReceiver"
+            android:enabled="true"
+            android:exported="true">
 
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+
+        </receiver>
     </application>
 
 </manifest>

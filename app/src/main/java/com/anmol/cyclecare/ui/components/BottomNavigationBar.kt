@@ -1,11 +1,9 @@
 package com.anmol.cyclecare.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Person
@@ -28,6 +26,7 @@ enum class CycleCareTab(val label: String) {
     Home("Home"),
     Calendar("Calendar"),
     Insights("Insights"),
+    Anmol("Anmol ❤️"),
     Profile("Profile")
 }
 
@@ -84,6 +83,21 @@ fun BottomNavigationBar(
             },
             label = {
                 Text("Insights", fontSize = 11.sp)
+            },
+            colors = navigationItemColors()
+        )
+
+        NavigationBarItem(
+            selected = selectedTab == CycleCareTab.Anmol,
+            onClick = { onTabSelected(CycleCareTab.Anmol) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Anmol Feature"
+                )
+            },
+            label = {
+                Text("Anmol", fontSize = 11.sp)
             },
             colors = navigationItemColors()
         )

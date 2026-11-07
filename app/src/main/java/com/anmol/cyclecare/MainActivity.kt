@@ -1,5 +1,4 @@
 package com.anmol.cyclecare
-
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -20,62 +19,60 @@ import com.anmol.cyclecare.data.local.CycleCareDatabase
 import com.anmol.cyclecare.data.repository.PeriodRepository
 import com.anmol.cyclecare.notifications.PeriodReminderScheduler
 import com.anmol.cyclecare.ui.screens.CalendarScreen
+import com.anmol.cyclecare.ui.screens.CareHistoryScreen
 import com.anmol.cyclecare.ui.screens.CycleCareScreen
 import com.anmol.cyclecare.ui.screens.HomeScreen
 import com.anmol.cyclecare.ui.screens.InsightsScreen
 import com.anmol.cyclecare.ui.screens.ProfileScreen
 import com.anmol.cyclecare.ui.theme.CycleCareTheme
+import com.anmol.cyclecare.viewmodel.CareViewModel
 import com.anmol.cyclecare.viewmodel.PeriodViewModel
 import com.anmol.cyclecare.viewmodel.PeriodViewModelFactory
-
 class MainActivity : ComponentActivity() {
-
     private lateinit var periodViewModel: PeriodViewModel
-
+    private lateinit var careViewModel: CareViewModel
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         enableEdgeToEdge()
-
         // Initialize the local database.
         val database = CycleCareDatabase.getDatabase(
             applicationContext
         )
-
-        // Initialize the repository.
+        // Initialize the period repository.
         val repository = PeriodRepository(
             database.periodDao()
         )
-
-        // Create the ViewModel factory.
-        val factory = PeriodViewModelFactory(
+        // Create the period ViewModel factory.
+        val periodFactory = PeriodViewModelFactory(
             repository = repository,
             application = application
         )
-
-        // Obtain the ViewModel.
+        // Obtain the existing period ViewModel.
         periodViewModel = ViewModelProvider(
             this,
-            factory
+            periodFactory
         )[PeriodViewModel::class.java]
-
+        // Obtain the care history ViewModel.
+        careViewModel = ViewModelProvider(
+            this
+        )[CareViewModel::class.java]
         // Display the app.
         setContent {
             CycleCareTheme {
                 CycleCareHomeScreen(
-                    periodViewModel = periodViewModel
+                    periodViewModel = periodViewModel,
+                    careViewModel = careViewModel
                 )
             }
         }
     }
 }
-
 @Composable
 fun CycleCareHomeScreen(
-    periodViewModel: PeriodViewModel
+    periodViewModel: PeriodViewModel,
+    careViewModel: CareViewModel
 ) {
     val context = LocalContext.current
-
     // Access preferences used by the older version of CycleCare.
     val preferences = remember {
         context.getSharedPreferences(
@@ -83,34 +80,26 @@ fun CycleCareHomeScreen(
             Context.MODE_PRIVATE
         )
     }
-
     // Observe the predicted next period date.
     val predictedPeriodDate by
     periodViewModel.nextPredictedPeriodDate.collectAsState()
-
     // Migrate an older saved period date, if one exists.
     LaunchedEffect(Unit) {
         val oldDate = preferences.getString(
             "last_period_date",
             null
         )
-
         if (oldDate != null) {
             periodViewModel.migrateLegacyDate(oldDate)
         }
     }
-
-    // Automatically keep the scheduled reminder synchronized
-    // with the latest predicted period date.
+    // Keep the period reminder synchronized with the prediction.
     LaunchedEffect(predictedPeriodDate) {
-
-        // Do nothing if reminders are switched off.
+        // Do nothing if period reminders are disabled.
         if (!PeriodReminderScheduler.areRemindersEnabled(context)) {
             return@LaunchedEffect
         }
-
-        // Android 13 and later require notification permission.
-        // ProfileScreen handles requesting this permission.
+        // Check notification permission on Android 13 and later.
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
@@ -118,20 +107,16 @@ fun CycleCareHomeScreen(
                 Manifest.permission.POST_NOTIFICATIONS
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Remove any existing alarm if permission is unavailable.
             PeriodReminderScheduler.cancelReminder(context)
             return@LaunchedEffect
         }
-
-        // Cancel the old alarm and schedule a new one based
-        // on the updated prediction and saved reminder settings.
+        // Reschedule the period reminder.
         PeriodReminderScheduler.rescheduleSavedReminder(
             context = context,
             predictedPeriodDate = predictedPeriodDate
         )
     }
-
-    // Connect all four screens to the bottom navigation.
+    // Connect all five screens to bottom navigation.
     CycleCareScreen(
         homeContent = {
             HomeScreen(
@@ -146,6 +131,11 @@ fun CycleCareHomeScreen(
         insightsContent = {
             InsightsScreen(
                 periodViewModel = periodViewModel
+            )
+        },
+        anmolContent = {
+            CareHistoryScreen(
+                careViewModel = careViewModel
             )
         },
         profileContent = {

@@ -18,7 +18,8 @@ fun CycleCareScreen(
     homeContent: @Composable () -> Unit,
     calendarContent: @Composable () -> Unit,
     insightsContent: @Composable () -> Unit,
-    profileContent: @Composable () -> Unit
+    profileContent: @Composable () -> Unit,
+    anmolContent: @Composable () -> Unit
 ) {
     var selectedTab by rememberSaveable {
         mutableStateOf(CycleCareTab.Home.name)
@@ -46,6 +47,7 @@ fun CycleCareScreen(
                 CycleCareTab.Home -> homeContent()
                 CycleCareTab.Calendar -> calendarContent()
                 CycleCareTab.Insights -> insightsContent()
+                CycleCareTab.Anmol -> anmolContent()
                 CycleCareTab.Profile -> profileContent()
             }
         }
