@@ -212,7 +212,7 @@ fun ProfileScreen(
                 careRemindersEnabled = true
 
                 careReminderMessage =
-                    "Anmol Feature is enabled! ❤️ Your daily care reminders are scheduled."
+                    "Precious Feature is enabled! ❤️ Your daily care reminders are scheduled."
             } else {
                 careRemindersEnabled = false
                 CareReminderScheduler.setEnabled(context, false)
@@ -519,7 +519,7 @@ fun ProfileScreen(
             // ANMOL FEATURE: DAILY CARE REMINDERS
             // -----------------------------------------------------------
             SectionHeading(
-                title = "Anmol Feature ❤️",
+                title = "Precious Feature ❤️",
                 subtitle = "Small daily nudges to take care of yourself"
             )
 
@@ -598,7 +598,7 @@ fun ProfileScreen(
                                         careRemindersEnabled = true
 
                                         careReminderMessage =
-                                            "Anmol Feature is enabled! ❤️ Daily reminders are scheduled."
+                                            "Precious Feature is enabled! ❤️ Daily reminders are scheduled."
                                     }
                                 } else {
                                     CareReminderScheduler.setEnabled(
@@ -609,7 +609,7 @@ fun ProfileScreen(
                                     careRemindersEnabled = false
 
                                     careReminderMessage =
-                                        "Anmol Feature reminders have been turned off."
+                                        "Precious Feature reminders have been turned off."
                                 }
                             }
                         )
@@ -638,7 +638,7 @@ fun ProfileScreen(
                         color = ProfileMuted
                     )
 
-                    // Temporary Anmol Feature notification test button
+                    // Temporary Precious Feature notification test button
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
@@ -669,7 +669,7 @@ fun ProfileScreen(
                                 context.sendBroadcast(testIntent)
 
                                 careReminderMessage =
-                                    "Anmol Feature test triggered. Check your notifications. ❤️"
+                                    "Precious Feature test triggered. Check your notifications. ❤️"
                             }
                         },
                         modifier = Modifier
@@ -690,7 +690,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "Test Anmol Notification ❤️",
+                            text = "Test Precious Notification ❤️",
                             fontWeight = FontWeight.SemiBold
                         )
                     }

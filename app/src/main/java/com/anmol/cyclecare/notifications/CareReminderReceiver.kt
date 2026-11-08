@@ -145,7 +145,7 @@ class CareReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Anmol Feature ❤️")
+            .setContentTitle("Precious Feature ❤️")
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
             .setContentIntent(openAppPendingIntent)
@@ -165,7 +165,7 @@ class CareReminderReceiver : BroadcastReceiver() {
 
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Anmol Feature Responses",
+                "Precious Feature Responses",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Caring replies to water, food, and fruit reminders"

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Notification permission for Android 13 and later -->
+    <!-- Notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Restore alarms after device restart -->
+    <!-- Restore notifications after device restart -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
@@ -18,7 +19,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CycleCare">
 
-        <!-- Main application screen -->
+        <!-- Main Activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -33,13 +34,13 @@
 
         </activity>
 
-        <!-- Receives scheduled period reminder alarms -->
+        <!-- PERIOD REMINDERS -->
+
         <receiver
             android:name=".notifications.PeriodReminderReceiver"
             android:enabled="true"
             android:exported="false" />
 
-        <!-- Restores reminders after a phone restart or app update -->
         <receiver
             android:name=".notifications.PeriodReminderBootReceiver"
             android:enabled="true"
@@ -51,17 +52,19 @@
             </intent-filter>
 
         </receiver>
-        <!-- Handles Yes/No responses to Anmol Feature reminders -->
+
+        <!-- CARE REMINDERS -->
+
         <receiver
             android:name=".notifications.CareReminderReceiver"
             android:enabled="true"
             android:exported="false" />
-        <!-- Displays scheduled Anmol Feature reminders -->
+
         <receiver
             android:name=".notifications.CareScheduledReminderReceiver"
             android:enabled="true"
             android:exported="false" />
-        <!-- Restores Anmol Feature reminders after restart -->
+
         <receiver
             android:name=".notifications.CareReminderBootReceiver"
             android:enabled="true"
@@ -73,6 +76,26 @@
             </intent-filter>
 
         </receiver>
+
+        <!-- DAILY AFFIRMATIONS -->
+
+        <receiver
+            android:name=".notifications.DailyAffirmationReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name=".notifications.AffirmationBootReceiver"
+            android:enabled="true"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+
+        </receiver>
+
     </application>
 
 </manifest>

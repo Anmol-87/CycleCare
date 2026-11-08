@@ -56,7 +56,7 @@ class CareScheduledReminderReceiver : BroadcastReceiver() {
         )
 
         if (!CareReminderScheduler.isEnabled(context)) {
-            Log.w(TAG, "Anmol Feature reminders are disabled")
+            Log.w(TAG, "Precious Feature reminders are disabled")
             return
         }
 
@@ -112,7 +112,7 @@ class CareScheduledReminderReceiver : BroadcastReceiver() {
             CHANNEL_ID
         )
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Anmol Feature ❤️")
+            .setContentTitle("Precious Feature ❤️")
             .setContentText(question)
             .setStyle(
                 NotificationCompat.BigTextStyle()
@@ -191,7 +191,7 @@ class CareScheduledReminderReceiver : BroadcastReceiver() {
 
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Anmol Feature Care Reminders",
+                "Precious Feature Care Reminders",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description =

@@ -1,8 +1,9 @@
 package com.anmol.cyclecare.ui.components
 
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,11 +19,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +33,7 @@ import com.anmol.cyclecare.data.local.PeriodEntity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import kotlin.math.hypot
 import kotlin.math.roundToInt
 
 // --------------------------------------------------
@@ -95,7 +99,8 @@ fun CycleInsights(
 
     }.sortedBy { it.start }
 
-    // Cycle lengths
+    // CYCLE LENGTHS
+
     val cycleRecords = sortedPeriods
         .zipWithNext { previous, next ->
 
@@ -106,7 +111,7 @@ fun CycleInsights(
 
             CycleRecord(
                 label = previous.start.format(
-                    DateTimeFormatter.ofPattern("MMM")
+                    DateTimeFormatter.ofPattern("MMM yy")
                 ),
                 days = days
             )
@@ -115,7 +120,8 @@ fun CycleInsights(
         .filter { it.days > 0 }
         .takeLast(6)
 
-    // Period durations
+    // PERIOD DURATIONS
+
     val durationRecords = sortedPeriods.mapNotNull { period ->
 
         val end = period.end ?: return@mapNotNull null
@@ -127,12 +133,14 @@ fun CycleInsights(
 
         DurationRecord(
             label = period.start.format(
-                DateTimeFormatter.ofPattern("MMM")
+                DateTimeFormatter.ofPattern("MMM yy")
             ),
             days = days
         )
 
     }.takeLast(6)
+
+    // STATISTICS
 
     val cycleValues = cycleRecords.map { it.days }
 
@@ -158,6 +166,7 @@ fun CycleInsights(
     ) {
 
         // HEADER
+
         Column(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
@@ -186,6 +195,7 @@ fun CycleInsights(
         }
 
         // STATISTICS
+
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -246,6 +256,7 @@ fun CycleInsights(
         }
 
         // CYCLE TREND
+
         PremiumChartCard(
             eyebrow = "MONTHLY OVERVIEW",
             title = "Cycle Length",
@@ -270,6 +281,7 @@ fun CycleInsights(
         }
 
         // PERIOD DURATION
+
         PremiumChartCard(
             eyebrow = "PERIOD HISTORY",
             title = "Period Duration",
@@ -290,6 +302,7 @@ fun CycleInsights(
         }
 
         // TRACKING SUMMARY
+
         TrackingSummary(
             latestDate = latestDate,
             totalPeriods = sortedPeriods.size,
@@ -297,6 +310,7 @@ fun CycleInsights(
         )
 
         // DISCLAIMER
+
         Text(
             text = "Your insights are calculated from your own recorded dates. " +
                     "Cycle patterns naturally vary, and these statistics are not medical predictions.",
@@ -475,6 +489,7 @@ private fun PremiumChartCard(
                     .background(Color(0xFFFFF0F5))
                     .padding(horizontal = 11.dp, vertical = 6.dp)
             ) {
+
                 Text(
                     text = badge,
                     fontSize = 10.sp,
@@ -489,7 +504,7 @@ private fun PremiumChartCard(
 }
 
 // --------------------------------------------------
-// SMOOTH CYCLE TREND CHART
+// CYCLE LENGTH CHART - INTERACTIVE LINE GRAPH
 // --------------------------------------------------
 
 @Composable
@@ -518,56 +533,106 @@ private fun CycleTrendChart(
     ) {
 
         // SELECTED VALUE
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
 
-            Column {
+        Column {
+
+            Text(
+                text = "SELECTED CYCLE",
+                fontSize = 9.sp,
+                letterSpacing = 1.2.sp,
+                color = TextMuted
+            )
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+
                 Text(
-                    text = "SELECTED CYCLE",
-                    fontSize = 9.sp,
-                    letterSpacing = 1.2.sp,
-                    color = TextMuted
+                    text = "${records[selectedIndex].days}",
+                    fontSize = 27.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Pink
                 )
 
-                Spacer(modifier = Modifier.height(3.dp))
-
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-
-                    Text(
-                        text = "${records[selectedIndex].days}",
-                        fontSize = 27.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Pink
-                    )
-
-                    Text(
-                        text = "days",
-                        fontSize = 12.sp,
-                        color = TextMuted,
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    )
-                }
+                Text(
+                    text = "days",
+                    fontSize = 12.sp,
+                    color = TextMuted,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
             }
 
             Text(
                 text = records[selectedIndex].label,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextDark
+                fontSize = 11.sp,
+                color = TextMuted
             )
         }
 
-        // CHART
+        // INTERACTIVE LINE GRAPH
+
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(175.dp)
+                .pointerInput(records) {
+
+                    detectTapGestures { tapOffset ->
+
+                        val left = 12.dp.toPx()
+                        val right = size.width - 12.dp.toPx()
+                        val top = 15.dp.toPx()
+                        val bottom = size.height - 15.dp.toPx()
+
+                        val chartWidth = right - left
+                        val chartHeight = bottom - top
+
+                        // Calculate the same points used by the graph.
+
+                        val points = values.mapIndexed { index, value ->
+
+                            val x = if (values.size == 1) {
+                                left + chartWidth / 2f
+                            } else {
+                                left + chartWidth * index /
+                                        (values.size - 1).toFloat()
+                            }
+
+                            val normalizedValue =
+                                (value - minValue).toFloat() / range
+
+                            val y = bottom - normalizedValue * chartHeight
+
+                            Offset(x, y)
+                        }
+
+                        // Find the nearest point to the user's tap.
+
+                        val nearestPoint = points
+                            .mapIndexed { index, point ->
+
+                                val distance = hypot(
+                                    tapOffset.x - point.x,
+                                    tapOffset.y - point.y
+                                )
+
+                                index to distance
+                            }
+                            .minByOrNull { it.second }
+
+                        // Select the point if the tap is close enough.
+
+                        if (
+                            nearestPoint != null &&
+                            nearestPoint.second <= 36.dp.toPx()
+                        ) {
+                            selectedIndex = nearestPoint.first
+                        }
+                    }
+                }
         ) {
 
             val left = 12.dp.toPx()
@@ -578,8 +643,10 @@ private fun CycleTrendChart(
             val chartWidth = right - left
             val chartHeight = bottom - top
 
-            // Grid lines
+            // GRID LINES
+
             for (i in 0..4) {
+
                 val y = top + chartHeight * i / 4f
 
                 drawLine(
@@ -590,7 +657,8 @@ private fun CycleTrendChart(
                 )
             }
 
-            // Points
+            // POINTS
+
             val points = values.mapIndexed { index, value ->
 
                 val x = if (values.size == 1) {
@@ -600,13 +668,16 @@ private fun CycleTrendChart(
                             (values.size - 1).toFloat()
                 }
 
-                val y = bottom -
-                        ((value - minValue) / range) * chartHeight
+                val normalizedValue =
+                    (value - minValue).toFloat() / range
+
+                val y = bottom - normalizedValue * chartHeight
 
                 Offset(x, y)
             }
 
-            // Smooth curved path
+            // CURVED LINE
+
             val linePath = Path().apply {
 
                 moveTo(points.first().x, points.first().y)
@@ -629,7 +700,8 @@ private fun CycleTrendChart(
                 }
             }
 
-            // Gradient below the curve
+            // GRADIENT AREA
+
             val fillPath = Path().apply {
 
                 addPath(linePath)
@@ -651,7 +723,8 @@ private fun CycleTrendChart(
                 )
             )
 
-            // Main curve
+            // MAIN CURVE
+
             drawPath(
                 path = linePath,
                 brush = Brush.horizontalGradient(
@@ -667,13 +740,15 @@ private fun CycleTrendChart(
                 )
             )
 
-            // Data point circles
+            // DATA POINTS
+
             points.forEachIndexed { index, point ->
 
                 if (index == selectedIndex) {
+
                     drawCircle(
                         color = LightPink.copy(alpha = 0.3f),
-                        radius = 12.dp.toPx(),
+                        radius = 13.dp.toPx(),
                         center = point
                     )
                 }
@@ -696,7 +771,8 @@ private fun CycleTrendChart(
             }
         }
 
-        // SELECTABLE DATA POINTS
+        // CLICKABLE MONTH SELECTORS
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -707,6 +783,9 @@ private fun CycleTrendChart(
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            selectedIndex = index
+                        }
                         .background(
                             if (index == selectedIndex) {
                                 Color(0xFFFFEDF3)
@@ -714,7 +793,10 @@ private fun CycleTrendChart(
                                 Color.Transparent
                             }
                         )
-                        .padding(horizontal = 9.dp, vertical = 7.dp),
+                        .padding(
+                            horizontal = 9.dp,
+                            vertical = 7.dp
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
@@ -743,7 +825,7 @@ private fun CycleTrendChart(
         }
 
         Text(
-            text = "Tap a month label to view its cycle length.",
+            text = "Tap a graph point or month to view its cycle length.",
             fontSize = 10.sp,
             color = TextMuted
         )
@@ -759,20 +841,22 @@ private fun PeriodDurationChart(
     records: List<DurationRecord>
 ) {
 
-    val maxValue = (records.maxOfOrNull { it.days } ?: 1)
-        .coerceAtLeast(1)
-
     var selectedIndex by remember(records) {
         mutableIntStateOf(records.lastIndex)
     }
+
+    val maxValue = (records.maxOfOrNull { it.days } ?: 1)
+        .coerceAtLeast(1)
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(13.dp)
     ) {
 
-        // Highlight selected duration
+        // SELECTED PERIOD
+
         Column {
+
             Text(
                 text = "SELECTED PERIOD",
                 fontSize = 9.sp,
@@ -801,9 +885,16 @@ private fun PeriodDurationChart(
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
+
+            Text(
+                text = records[selectedIndex].label,
+                fontSize = 11.sp,
+                color = TextMuted
+            )
         }
 
-        // BAR CHART
+        // BAR GRAPH
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -818,7 +909,9 @@ private fun PeriodDurationChart(
                         record.days.toFloat() / maxValue
                         ).coerceIn(0f, 1f)
 
-                val barColor = if (index == selectedIndex) {
+                val isSelected = index == selectedIndex
+
+                val barColor = if (isSelected) {
                     Pink
                 } else {
                     LightPink
@@ -857,7 +950,7 @@ private fun PeriodDurationChart(
                             )
                             .background(
                                 Brush.verticalGradient(
-                                    colors = if (index == selectedIndex) {
+                                    colors = if (isSelected) {
                                         listOf(
                                             Color(0xFFE88BA9),
                                             Pink,
@@ -876,7 +969,8 @@ private fun PeriodDurationChart(
             }
         }
 
-        // MONTH SELECTORS
+        // CLICKABLE MONTH SELECTORS
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -887,6 +981,9 @@ private fun PeriodDurationChart(
                 Column(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            selectedIndex = index
+                        }
                         .background(
                             if (index == selectedIndex) {
                                 Color(0xFFFFEDF3)
@@ -894,7 +991,10 @@ private fun PeriodDurationChart(
                                 Color.Transparent
                             }
                         )
-                        .padding(horizontal = 9.dp, vertical = 7.dp),
+                        .padding(
+                            horizontal = 9.dp,
+                            vertical = 7.dp
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
@@ -923,7 +1023,7 @@ private fun PeriodDurationChart(
         }
 
         Text(
-            text = "Tap a month label to view its period duration.",
+            text = "Tap a month to view its period duration.",
             fontSize = 10.sp,
             color = TextMuted
         )
